@@ -4,7 +4,7 @@ import (
 	"time"
 )
 
-const NUMBER_OF_CHANNELS int = 2
+const NUMBER_OF_QUEUES int = 2
 
 type MessageStruct struct {
 	message   string
@@ -37,8 +37,13 @@ func (M *MessageQueue) send(s MessageStruct, QueueNum int) {
 }
 
 func (M *MessageQueue) receive(QueueNum int, subscriberNum int) (MessageStruct, bool) {
-	x, ok := <-M.streamChannels[QueueNum][subscriberNum]
-	return x, ok
+	return MessageStruct{}, false
+	select {
+	case x := <-M.streamChannels[QueueNum][subscriberNum]:
+		return x, true
+	default:
+		return MessageStruct{}, false
+	}
 }
 
 func (M *MessageQueue) addChannel() {
@@ -49,7 +54,7 @@ func main() {
 	var messanger MessageQueueInterface
 
 	messanger = CreateMessageQueue()
-	for i := 0; i < NUMBER_OF_CHANNELS; i++ {
+	for i := 0; i < NUMBER_OF_QUEUES; i++ {
 		messanger.addChannel()
 	}
 	messanger.addSubscriber(0)
